@@ -8,6 +8,11 @@ use std::path::PathBuf;
 mod rusty_tesseract;
 use rusty_tesseract::tesseract::error::TessError;
 
+use active_win_pos_rs::get_active_window;
+use image::RgbaImage;
+use regex::Regex;
+use win_screenshot::prelude::*;
+
 use std::time::Instant;
 
 fn main() {
@@ -26,10 +31,31 @@ fn print_time_elapsed(start_time: Instant) {
 
 #[tauri::command]
 async fn ipc_create_window(handle: tauri::AppHandle) {
+    let active_window = get_active_window().unwrap();
+    let re = Regex::new(r"HWND\((\d+)\)").unwrap();
+    let captures = re.captures(active_window.window_id.as_str()).unwrap();
+    let integer_str = captures.get(1).unwrap();
+    let hwnd = integer_str.as_str().parse::<isize>().unwrap();
+
+    let using = Using::PrintWindow;
+    let area = Area::ClientOnly;
+    let buf = capture_window_ex(hwnd, using, area, None, None).unwrap();
+    let img = RgbaImage::from_raw(buf.width, buf.height, buf.pixels).unwrap();
+    img.save("screenshot.jpg").unwrap();
+
+    #[cfg(dev)]
     let docs_window = tauri::WindowBuilder::new(
         &handle,
-        "external", /* the unique window label */
-        tauri::WindowUrl::External("https://tauri.app/".parse().unwrap()),
+        "local",
+        tauri::WindowUrl::External("http://localhost:3000/capture".parse().unwrap()),
+    )
+    .build()
+    .unwrap();
+    #[cfg(not(dev))]
+    let docs_window = tauri::WindowBuilder::new(
+        &handle,
+        "local",
+        tauri::WindowUrl::App("capture.html".into()),
     )
     .build()
     .unwrap();

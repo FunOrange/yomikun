@@ -23,6 +23,9 @@ image = "0.24.7"
 subprocess = "0.2.9"
 substring = "1.4.5"
 tempfile = "3.8.0"
+win-screenshot = "4.0.5"
+active-win-pos-rs = "0.8.1"
+regex = "1.9.5"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

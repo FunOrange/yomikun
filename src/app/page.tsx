@@ -6,10 +6,6 @@ import { ComboBox } from "@fluentui/react";
 import { useEffect, useState } from "react";
 import { register } from "@tauri-apps/api/globalShortcut";
 
-function isNumeric(str: string) {
-  return /^-?\d*\.?\d+$/.test(str);
-}
-
 enum TextDirection {
   Horizontal = "horizontal",
   Vertical = "vertical",
@@ -38,6 +34,23 @@ const parseTsvOutput = (output: string) => {
   return parsedRows;
 };
 
+const invokeFunction =
+  (functionName: string, args = {}) =>
+  async () => {
+    console.log(`invoking ${functionName}`, args);
+    try {
+      const result = await invoke<string>(functionName, args);
+      console.log(result);
+    } catch (e) {
+      console.log("error:", e);
+    }
+  };
+
+const initiateOcr = async () => {
+  const invocationFunction = invokeFunction("ipc_create_window");
+  invocationFunction();
+};
+
 export default function Home() {
   const comboId = "combo-psm";
   const [textDirection, setTextDirection] = useState<TextDirection>(
@@ -45,17 +58,14 @@ export default function Home() {
   );
 
   useEffect(() => {
-    register("CommandOrControl+Shift+A", () => {
-      console.log("Shortcut triggered");
-    })
-      .then(() =>
-        console.log("global shortcut CommandOrControl+Shift+A registered")
-      )
-      .catch((e) => {
-        if (!e.includes("hotkey already registered")) {
-          console.log("failed to register global shortcut: ", e);
-        }
-      });
+    try {
+      register("CommandOrControl+Shift+A", initiateOcr);
+      console.log("global shortcut CommandOrControl+Shift+A registered");
+    } catch (err) {
+      if (!(err as any).includes("hotkey already registered")) {
+        console.log("failed to register global shortcut: ", err);
+      }
+    }
   }, []);
 
   const runOcrClicked = async () => {
@@ -77,18 +87,6 @@ export default function Home() {
       console.log("error:", e);
     }
   };
-
-  const invokeFunction =
-    (functionName: string, args = {}) =>
-    async () => {
-      console.log(`invoking ${functionName}`, args);
-      try {
-        const result = await invoke<string>(functionName, args);
-        console.log(result);
-      } catch (e) {
-        console.log("error:", e);
-      }
-    };
 
   return (
     <main className={styles.main}>
