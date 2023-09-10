@@ -52,8 +52,13 @@ export default function Home() {
   const invokeFunction =
     (functionName: string, args = {}) =>
     async () => {
-      const result = await invoke<string>(functionName, args);
-      console.log(result);
+      console.log(`invoking ${functionName}`, args);
+      try {
+        const result = await invoke<string>(functionName, args);
+        console.log(result);
+      } catch (e) {
+        console.log("error:", e);
+      }
     };
 
   return (
@@ -76,6 +81,12 @@ export default function Home() {
         <div style={{ display: "flex", gap: "10px" }}>
           <PrimaryButton onClick={invokeFunction("ipc_ocr", { psm: psm ?? 5 })}>
             Run OCR
+          </PrimaryButton>
+        </div>
+        <div />
+        <div style={{ display: "flex", gap: "10px" }}>
+          <PrimaryButton onClick={invokeFunction("ipc_create_window")}>
+            Create new window
           </PrimaryButton>
         </div>
       </div>
