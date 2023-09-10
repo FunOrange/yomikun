@@ -127,9 +127,9 @@ pub fn create_tesseract_command(image: &Image, args: &Args) -> TessResult<Comman
         .arg("-l")
         .arg(args.lang.clone());
 
-    if let Some(dpi) = args.dpi {
-        command.arg("--dpi").arg(dpi.to_string());
-    }
+    // if let Some(dpi) = args.dpi {
+    //     command.arg("--dpi").arg(dpi.to_string());
+    // }
 
     if let Some(psm) = args.psm {
         command.arg("--psm").arg(psm.to_string());

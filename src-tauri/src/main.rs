@@ -16,7 +16,7 @@ use std::time::Instant;
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![print_cwd, greet, translate])
+        .invoke_handler(tauri::generate_handler![print_cwd, greet, ipc_ocr])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -41,18 +41,18 @@ fn print_time_elapsed(start_time: Instant) {
 }
 
 #[tauri::command]
-fn translate() -> String {
+fn ipc_ocr(psm: i32) -> String {
     // 1. Read image
-    let img_path = "shounen-no-abyss-2.png";
+    let img_path = "shounen-no-abyss-3.png";
     let img_result = Image::from_path(img_path);
     let img = img_result.expect(format!("Failed to read image at path: {}", img_path).as_str());
 
     // 2. Set tesseract parameters
     let my_args = Args {
-        lang: "jpn".to_string(),
+        lang: "jpn_vert".to_string(),
         config_variables: HashMap::new(),
         dpi: Some(150),
-        psm: Some(11),
+        psm: Some(psm),
         oem: Some(3),
     };
 

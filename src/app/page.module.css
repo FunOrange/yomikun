@@ -1,15 +1,13 @@
 .main {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6rem;
+  padding: 3rem 6rem;
   min-height: 100vh;
 }
 
 .description {
   display: inherit;
-  justify-content: inherit;
+  justify-content: space-between;
   align-items: inherit;
   font-size: 0.85rem;
   max-width: var(--max-width);
@@ -18,13 +16,7 @@
   font-family: var(--font-mono);
 }
 
-.description a {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.description p {
+.description h2 {
   position: relative;
   margin: 0;
   padding: 1rem;
@@ -73,10 +65,12 @@
 
 .center {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  /* justify-content: center; */
+  /* align-items: center; */
   position: relative;
-  padding: 4rem 0;
+  padding: 3rem 0;
 }
 
 .center::before {
