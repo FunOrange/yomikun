@@ -3,51 +3,80 @@ import styles from "./page.module.css";
 import { PrimaryButton } from "@fluentui/react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { ComboBox } from "@fluentui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { register } from "@tauri-apps/api/globalShortcut";
+
+function isNumeric(str: string) {
+  return /^-?\d*\.?\d+$/.test(str);
+}
+
+enum TextDirection {
+  Horizontal = "horizontal",
+  Vertical = "vertical",
+}
+
+const tesseractArguments = {
+  [TextDirection.Vertical]: { lang: "jpn_vert", psm: 5 },
+  [TextDirection.Horizontal]: { lang: "jpn", psm: 6 },
+};
+
+const parseTsvOutput = (output: string) => {
+  const lines = output.includes("\r\n")
+    ? output.trim().split("\r\n")
+    : output.trim().split("\n");
+  const headerRow = lines[0];
+  const headers = headerRow.split(/\s+/);
+  const dataRows = lines.slice(1);
+  const parsedRows = dataRows.map((line) => {
+    const cells = line.split(/\s+/);
+    let parsedRow: Record<string, string | number> = {};
+    headers.forEach((header, i) => {
+      parsedRow[header] = header === "text" ? cells[i] : Number(cells[i]);
+    });
+    return parsedRow;
+  });
+  return parsedRows;
+};
 
 export default function Home() {
   const comboId = "combo-psm";
-  const [psm, setPsm] = useState(5);
-  const psmOptions = [
-    {
-      key: 0,
-      text: "0 - Orientation and script detection (OSD) only.",
-    },
-    { key: 1, text: "1 - Automatic page segmentation with OSD." },
-    {
-      key: 2,
-      text: "2 - Automatic page segmentation, but no OSD, or OCR.",
-    },
-    {
-      key: 3,
-      text: "3 - Fully automatic page segmentation, but no OSD. (Default)",
-    },
-    {
-      key: 4,
-      text: "4 - Assume a single column of text of variable sizes.",
-    },
-    {
-      key: 5,
-      text: "5 - Assume a single uniform block of vertically aligned text.",
-    },
-    { key: 6, text: "6 - Assume a single uniform block of text." },
-    { key: 7, text: "7 - Treat the image as a single text line." },
-    { key: 8, text: "8 - Treat the image as a single word." },
-    {
-      key: 9,
-      text: "9 - Treat the image as a single word in a circle.",
-    },
-    { key: 10, text: "10 - Treat the image as a single character." },
-    {
-      key: 11,
-      text: "11 - Sparse text. Find as much text as possible in no particular order.",
-    },
-    { key: 12, text: "12 - Sparse text with OSD." },
-    {
-      key: 13,
-      text: "13 - Raw line. Treat the image as a single text line, bypassing hacks that are Tesseract-specific.",
-    },
-  ];
+  const [textDirection, setTextDirection] = useState<TextDirection>(
+    TextDirection.Vertical
+  );
+
+  useEffect(() => {
+    register("CommandOrControl+Shift+A", () => {
+      console.log("Shortcut triggered");
+    })
+      .then(() =>
+        console.log("global shortcut CommandOrControl+Shift+A registered")
+      )
+      .catch((e) => {
+        if (!e.includes("hotkey already registered")) {
+          console.log("failed to register global shortcut: ", e);
+        }
+      });
+  }, []);
+
+  const runOcrClicked = async () => {
+    try {
+      const output = await invoke<string>(
+        "ipc_ocr",
+        tesseractArguments[textDirection]
+      );
+      if (!output) {
+        console.log("no output for some reason", output);
+        return;
+      }
+      let parsedRows = parseTsvOutput(output);
+      parsedRows = parsedRows.filter(
+        (characterData) => (characterData.conf as number) > 1
+      );
+      console.table(parsedRows);
+    } catch (e) {
+      console.log("error:", e);
+    }
+  };
 
   const invokeFunction =
     (functionName: string, args = {}) =>
@@ -69,19 +98,20 @@ export default function Home() {
 
       <div className={styles.center}>
         <div>
-          <label id={comboId}>Page segmentation mode</label>
+          <label id={comboId}>Text direction</label>
           <ComboBox
             aria-labelledby={comboId}
             placeholder="Select from dropdown..."
-            selectedKey={psm}
-            onChange={(e, option) => setPsm(option?.key as number)}
-            options={psmOptions}
+            selectedKey={textDirection}
+            onChange={(e, option) => setTextDirection(option?.key as any)}
+            options={[
+              { key: TextDirection.Vertical, text: "Vertical" },
+              { key: TextDirection.Horizontal, text: "Horizontal" },
+            ]}
           />
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
-          <PrimaryButton onClick={invokeFunction("ipc_ocr", { psm: psm ?? 5 })}>
-            Run OCR
-          </PrimaryButton>
+          <PrimaryButton onClick={runOcrClicked}>Run OCR</PrimaryButton>
         </div>
         <div />
         <div style={{ display: "flex", gap: "10px" }}>
