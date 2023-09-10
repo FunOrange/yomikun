@@ -22,7 +22,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
 }
 
 .description p {
@@ -81,6 +80,7 @@
 }
 
 .center::before {
+  pointer-events: none;
   background: var(--secondary-glow);
   border-radius: 50%;
   width: 480px;
@@ -89,6 +89,7 @@
 }
 
 .center::after {
+  pointer-events: none;
   background: var(--primary-glow);
   width: 240px;
   height: 180px;
